@@ -110,3 +110,5 @@ def insert_investment_details(user_id, stock_name, amount_of_stocks, amount_of_m
             connection.commit()
         finally:
             connection.close()
+
+
