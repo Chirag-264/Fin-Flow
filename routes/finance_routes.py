@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from database.database import insert_transaction_details, insert_investment_details
+from database.database import insert_transaction_details, insert_investment_details, transfer_emergency_fund
 
 finance_bp = Blueprint("finance", __name__)
 
@@ -28,3 +28,19 @@ def track_investment():
         data["status"],
     )
     return jsonify({"message": "Investment recorded successfully"}), 201
+
+@finance_bp.route("/emergency-transfer", methods=["POST"])
+def emergency_transfer():
+    """
+    Transfers money from emergency fund to the main bank account
+    """
+    data = request.get_json()
+    user_id = data.get("user_id")
+    amount = data.get("amount")
+
+    success, message = transfer_emergency_fund(user_id, amount)
+    
+    if success:
+        return jsonify({"message": "Emergency fund transferred successfully"}), 200
+    else:
+        return jsonify({"error": message}), 400
