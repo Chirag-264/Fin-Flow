@@ -52,63 +52,90 @@ try:
             )
         """)
         
+        # Create saving goals table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS saving_goals (
+                goal_id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
+                goal_name VARCHAR(100) NOT NULL,
+                target_amount DECIMAL(10, 2) NOT NULL,
+                current_amount DECIMAL(10, 2) NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES user_registration(user_id)
+            )
+        """)
+        
     connection.commit()
 finally:
     connection.close()
 
 
 def insert_user_registration(username, password, email, full_name, date_of_birth):
-        connection = pymysql.connect(
-            host='localhost',
-            user='your_username',
-            password='your_password',
-            database='finance'
-        )
-        try:
-            with connection.cursor() as cursor:
-                sql = """
-                    INSERT INTO user_registration (username, password, email, full_name, date_of_birth)
-                    VALUES (%s, %s, %s, %s, %s)
-                """
-                cursor.execute(sql, (username, password, email, full_name, date_of_birth))
-            connection.commit()
-        finally:
-            connection.close()
+    connection = pymysql.connect(
+        host='localhost',
+        user='your_username',
+        password='your_password',
+        database='finance'
+    )
+    try:
+        with connection.cursor() as cursor:
+            sql = """
+                INSERT INTO user_registration (username, password, email, full_name, date_of_birth)
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql, (username, password, email, full_name, date_of_birth))
+        connection.commit()
+    finally:
+        connection.close()
 
 def insert_transaction_details(user_id, amount, transaction_type):
-        connection = pymysql.connect(
-            host='localhost',
-            user='your_username',
-            password='your_password',
-            database='finance'
-        )
-        try:
-            with connection.cursor() as cursor:
-                sql = """
-                    INSERT INTO transaction_details (user_id, amount, transaction_type)
-                    VALUES (%s, %s, %s)
-                """
-                cursor.execute(sql, (user_id, amount, transaction_type))
-            connection.commit()
-        finally:
-            connection.close()
+    connection = pymysql.connect(
+        host='localhost',
+        user='your_username',
+        password='your_password',
+        database='finance'
+    )
+    try:
+        with connection.cursor() as cursor:
+            sql = """
+                INSERT INTO transaction_details (user_id, amount, transaction_type)
+                VALUES (%s, %s, %s)
+            """
+            cursor.execute(sql, (user_id, amount, transaction_type))
+        connection.commit()
+    finally:
+        connection.close()
 
 def insert_investment_details(user_id, stock_name, amount_of_stocks, amount_of_money, status):
-        connection = pymysql.connect(
-            host='localhost',
-            user='your_username',
-            password='your_password',
-            database='finance'
-        )
-        try:
-            with connection.cursor() as cursor:
-                sql = """
-                    INSERT INTO investment_details (user_id, stock_name, amount_of_stocks, amount_of_money, status)
-                    VALUES (%s, %s, %s, %s, %s)
-                """
-                cursor.execute(sql, (user_id, stock_name, amount_of_stocks, amount_of_money, status))
-            connection.commit()
-        finally:
-            connection.close()
+    connection = pymysql.connect(
+        host='localhost',
+        user='your_username',
+        password='your_password',
+        database='finance'
+    )
+    try:
+        with connection.cursor() as cursor:
+            sql = """
+                INSERT INTO investment_details (user_id, stock_name, amount_of_stocks, amount_of_money, status)
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql, (user_id, stock_name, amount_of_stocks, amount_of_money, status))
+        connection.commit()
+    finally:
+        connection.close()
 
-
+def insert_saving_goals(user_id, goal_name, target_amount, current_amount):
+    connection = pymysql.connect(
+        host='localhost',
+        user='your_username',
+        password='your_password',
+        database='finance'
+    )
+    try:
+        with connection.cursor() as cursor:
+            sql = """
+                INSERT INTO saving_goals (user_id, goal_name, target_amount, current_amount)
+                VALUES (%s, %s, %s, %s)"""
+            cursor.execute(sql, (user_id, goal_name, target_amount, current_amount))
+        connection.commit()
+    finally:
+        connection.close()
