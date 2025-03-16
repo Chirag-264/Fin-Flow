@@ -4,6 +4,9 @@ from flask_cors import CORS
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+import pymysql
+pymysql.install_as_MySQLdb()
+
 
 # Initialize database
 db = SQLAlchemy()
