@@ -13,7 +13,7 @@ class Config:
         "port": os.getenv("MYSQLPORT", 3306)
     }
     
-    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}/{DB_CONFIG['database']}"
+    SQLALCHEMY_DATABASE_URI = os.getenv("MYSQL_URL")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     DEBUG = False
 
