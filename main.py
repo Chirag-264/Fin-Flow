@@ -16,7 +16,7 @@ def create_app():
     app = Flask(__name__)
     
     # Load configuration
-    app.settings.from_object("settings.app_settings")
+    app.config.from_object("settings.app_settings")
     
     # Initialize database
     db.init_app(app)

@@ -2,7 +2,7 @@ import bcrypt
 import jwt
 import datetime
 
-SECRET_KEY = "your_secret_key_here"  # Replace with a secure key
+SECRET_KEY = "e5b7a9d9f34c6f1a3d2b5c9f8a7e6d1c4b3a2f9e8d7c6b5a1e2d3f4c5b6a7d8e"  # Replace with a secure key
 
 def hash_password(password):
     """Hashes a password using bcrypt."""
