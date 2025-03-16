@@ -1,90 +1,112 @@
 import pymysql
-import os
 import requests
-from config import DB_CONFIG, ALPHA_VANTAGE_API_KEY
 
-# Database Connection Function
-def get_connection():
-    return pymysql.connect(
-        host=DB_CONFIG['host'],
-        user=DB_CONFIG['user'],
-        password=DB_CONFIG['password'],
-        database=DB_CONFIG['database'],
-        cursorclass=pymysql.cursors.DictCursor
-    )
+# Database connection
+connection = pymysql.connect(
+    host='localhost',
+    user='your_username',
+    password='your_password'
+)
 
-# Initialize Database
-def initialize_database():
+try:
+    with connection.cursor() as cursor:
+        # Create database if it doesn't exist
+        cursor.execute("CREATE DATABASE IF NOT EXISTS finance")
+        cursor.execute("USE finance")
+        
+        # Create user registration details table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS user_registration (
+                user_id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(50) NOT NULL,
+                password VARCHAR(100) NOT NULL,
+                email VARCHAR(100) NOT NULL,
+                full_name VARCHAR(100),
+                date_of_birth DATE,
+                registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                reward_points INT DEFAULT 0
+            )
+        """)
+        
+        # Create transaction details table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS transaction_details (
+                transaction_id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
+                transaction_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                amount DECIMAL(10, 2) NOT NULL,
+                transaction_type VARCHAR(50) NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES user_registration(user_id)
+            )
+        """)
+        
+        # Create investment details table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS investment_details (
+                investment_id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
+                stock_name VARCHAR(100) NOT NULL,
+                amount_of_stocks INT NOT NULL,
+                amount_of_money DECIMAL(10, 2) NOT NULL,
+                status VARCHAR(50) NOT NULL,
+                buying_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES user_registration(user_id)
+            )
+        """)
+        
+        # Create stock prices table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS stock_prices (
+                stock_id INT AUTO_INCREMENT PRIMARY KEY,
+                stock_symbol VARCHAR(10) NOT NULL,
+                price DECIMAL(10, 2) NOT NULL,
+                recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+    connection.commit()
+finally:
+    connection.close()
+
+# Alpha Vantage API Key
+ALPHA_VANTAGE_API_KEY = "your_alpha_vantage_api_key"
+
+# Function to fetch real-time stock prices
+def fetch_stock_price(stock_symbol):
+    url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={stock_symbol}&apikey={ALPHA_VANTAGE_API_KEY}"
+    response = requests.get(url).json()
+    try:
+        price = float(response['Global Quote']['05. price'])
+        return price
+    except KeyError:
+        return None
+
+# Function to store stock prices in database
+def store_stock_price(stock_symbol, price):
     connection = pymysql.connect(
-        host=DB_CONFIG['host'],
-        user=DB_CONFIG['user'],
-        password=DB_CONFIG['password']
+        host='localhost',
+        user='your_username',
+        password='your_password',
+        database='finance'
     )
     try:
         with connection.cursor() as cursor:
-            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {DB_CONFIG['database']}")
-            cursor.execute(f"USE {DB_CONFIG['database']}")
-
-            # User Table
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS user_registration (
-                    user_id INT AUTO_INCREMENT PRIMARY KEY,
-                    username VARCHAR(50) NOT NULL UNIQUE,
-                    password VARCHAR(255) NOT NULL,
-                    email VARCHAR(100) NOT NULL UNIQUE,
-                    full_name VARCHAR(100),
-                    date_of_birth DATE,
-                    registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            # Transactions Table
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS transaction_details (
-                    transaction_id INT AUTO_INCREMENT PRIMARY KEY,
-                    user_id INT,
-                    transaction_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    amount DECIMAL(10, 2) NOT NULL,
-                    transaction_type VARCHAR(50) NOT NULL,
-                    description TEXT,
-                    FOREIGN KEY (user_id) REFERENCES user_registration(user_id) ON DELETE CASCADE
-                )
-            """)
-
-            # Investment Table
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS investment_details (
-                    investment_id INT AUTO_INCREMENT PRIMARY KEY,
-                    user_id INT,
-                    stock_name VARCHAR(100) NOT NULL,
-                    amount_of_stocks INT NOT NULL,
-                    amount_of_money DECIMAL(10, 2) NOT NULL,
-                    status ENUM('active', 'closed') NOT NULL,
-                    buying_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES user_registration(user_id) ON DELETE CASCADE
-                )
-            """)
-
-            # Emergency Fund Transfers
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS emergency_funds (
-                    fund_id INT AUTO_INCREMENT PRIMARY KEY,
-                    user_id INT,
-                    amount DECIMAL(10, 2) NOT NULL,
-                    reason TEXT NOT NULL,
-                    request_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
-                    FOREIGN KEY (user_id) REFERENCES user_registration(user_id) ON DELETE CASCADE
-                )
-            """)
-
+            sql = """
+                INSERT INTO stock_prices (stock_symbol, price)
+                VALUES (%s, %s)
+            """
+            cursor.execute(sql, (stock_symbol, price))
         connection.commit()
     finally:
         connection.close()
 
-# User Registration
-def insert_user(username, password, email, full_name, date_of_birth):
-    connection = get_connection()
+# Function to insert user registration details
+def insert_user_registration(username, password, email, full_name, date_of_birth):
+    connection = pymysql.connect(
+        host='localhost',
+        user='your_username',
+        password='your_password',
+        database='finance'
+    )
     try:
         with connection.cursor() as cursor:
             sql = """
@@ -96,23 +118,33 @@ def insert_user(username, password, email, full_name, date_of_birth):
     finally:
         connection.close()
 
-# Insert Transaction
-def insert_transaction(user_id, amount, transaction_type, description=None):
-    connection = get_connection()
+# Function to insert transaction details
+def insert_transaction_details(user_id, amount, transaction_type):
+    connection = pymysql.connect(
+        host='localhost',
+        user='your_username',
+        password='your_password',
+        database='finance'
+    )
     try:
         with connection.cursor() as cursor:
             sql = """
-                INSERT INTO transaction_details (user_id, amount, transaction_type, description)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO transaction_details (user_id, amount, transaction_type)
+                VALUES (%s, %s, %s)
             """
-            cursor.execute(sql, (user_id, amount, transaction_type, description))
+            cursor.execute(sql, (user_id, amount, transaction_type))
         connection.commit()
     finally:
         connection.close()
 
-# Insert Investment
-def insert_investment(user_id, stock_name, amount_of_stocks, amount_of_money, status="active"):
-    connection = get_connection()
+# Function to insert investment details
+def insert_investment_details(user_id, stock_name, amount_of_stocks, amount_of_money, status):
+    connection = pymysql.connect(
+        host='localhost',
+        user='your_username',
+        password='your_password',
+        database='finance'
+    )
     try:
         with connection.cursor() as cursor:
             sql = """
@@ -124,62 +156,22 @@ def insert_investment(user_id, stock_name, amount_of_stocks, amount_of_money, st
     finally:
         connection.close()
 
-# Emergency Fund Request
-def request_emergency_fund(user_id, amount, reason):
-    connection = get_connection()
+# Function to update reward points
+def update_reward_points(user_id, points):
+    connection = pymysql.connect(
+        host='localhost',
+        user='your_username',
+        password='your_password',
+        database='finance'
+    )
     try:
         with connection.cursor() as cursor:
             sql = """
-                INSERT INTO emergency_funds (user_id, amount, reason)
-                VALUES (%s, %s, %s)
+                UPDATE user_registration
+                SET reward_points = reward_points + %s
+                WHERE user_id = %s
             """
-            cursor.execute(sql, (user_id, amount, reason))
+            cursor.execute(sql, (points, user_id))
         connection.commit()
     finally:
         connection.close()
-
-# Fetch User Transactions
-def get_transactions(user_id):
-    connection = get_connection()
-    try:
-        with connection.cursor() as cursor:
-            sql = "SELECT * FROM transaction_details WHERE user_id = %s ORDER BY transaction_time DESC"
-            cursor.execute(sql, (user_id,))
-            return cursor.fetchall()
-    finally:
-        connection.close()
-
-# Fetch Investments
-def get_investments(user_id):
-    connection = get_connection()
-    try:
-        with connection.cursor() as cursor:
-            sql = "SELECT * FROM investment_details WHERE user_id = %s ORDER BY buying_time DESC"
-            cursor.execute(sql, (user_id,))
-            return cursor.fetchall()
-    finally:
-        connection.close()
-
-# Fetch Emergency Fund Requests
-def get_emergency_fund_requests(user_id):
-    connection = get_connection()
-    try:
-        with connection.cursor() as cursor:
-            sql = "SELECT * FROM emergency_funds WHERE user_id = %s ORDER BY request_time DESC"
-            cursor.execute(sql, (user_id,))
-            return cursor.fetchall()
-    finally:
-        connection.close()
-
-# Alpha Vantage API for Real-Time Stock Data
-def get_stock_price(symbol):
-    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={ALPHA_VANTAGE_API_KEY}"
-    response = requests.get(url).json()
-    
-    try:
-        latest_time = list(response['Time Series (5min)'].keys())[0]
-        price = response['Time Series (5min)'][latest_time]['1. open']
-        return float(price)
-    except KeyError:
-        return None
-

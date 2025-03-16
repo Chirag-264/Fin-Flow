@@ -1,0 +1,48 @@
+<!-- templates/rewards.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Include in <head> of ALL HTML files -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rewards | Fin-Flow</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<!-- Include before </body> of ALL HTML files -->
+<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rewards.js') }}"></script>
+
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Fin-Flow Rewards</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2 class="text-center">Your Reward Points</h2>
+        <div class="card text-center p-4">
+            <h3 id="rewardPoints">Loading...</h3>
+        </div>
+
+        <h4 class="mt-4">Milestones & Rewards</h4>
+        <ul class="list-group">
+            <li class="list-group-item">500 Points - Silver Badge 🎖</li>
+            <li class="list-group-item">1000 Points - Gold Badge 🏆</li>
+            <li class="list-group-item">2000 Points - Exclusive Financial Tips 📈</li>
+            <li class="list-group-item">5000 Points - Premium Membership 🚀</li>
+        </ul>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $.getJSON("/get-rewards", function(data) {
+                $("#rewardPoints").text(data.reward_points + " Points");
+            });
+        });
+    </script>
+</body>
+</html>
