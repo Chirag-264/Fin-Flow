@@ -1,0 +1,11 @@
+Flask==2.2.5
+Flask-SQLAlchemy==3.0.5
+Flask-Cors==3.0.10
+Flask-Migrate==4.0.4
+PyMySQL==1.1.0
+bcrypt==4.0.1
+PyJWT==2.8.0
+requests==2.31.0
+pandas==2.1.4
+numpy==1.26.3
+gunicorn==21.2.0
