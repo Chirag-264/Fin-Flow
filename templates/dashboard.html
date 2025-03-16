@@ -1,86 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Include in <head> of ALL HTML files -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - FinFlow</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Fin-Flow | Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script defer src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </head>
-<!-- Include before </body> of ALL HTML files -->
-<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
-
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">FinFlow</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="#budget">Budget</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#investments">Investments</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#transactions">Transactions</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#rewards">Rewards</a></li>
-                    <li class="nav-item"><a class="nav-link" href="logout.html">Logout</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    
-    <div class="container mt-4">
-        <h2 id="welcome-message">Welcome, User!</h2>
-        
-        <div class="row">
-            <div class="col-md-6">
-                <canvas id="financeChart"></canvas>
-            </div>
-            <div class="col-md-6">
-                <div id="budget" class="p-3 border rounded bg-light mb-3">
-                    <h4>Budget Overview</h4>
-                    <p>Track your monthly budget and expenses.</p>
-                </div>
-                <div id="investments" class="p-3 border rounded bg-light mb-3">
-                    <h4>Investment Tracker</h4>
-                    <p>Monitor your stock and crypto investments.</p>
-                </div>
-                <div id="transactions" class="p-3 border rounded bg-light mb-3">
-                    <h4>Recent Transactions</h4>
-                    <p>View and manage your past financial transactions.</p>
-                </div>
-                <div id="rewards" class="p-3 border rounded bg-light">
-                    <h4>Rewards</h4>
-                    <p>Earn points by maintaining good financial habits.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            let user = localStorage.getItem("username") || "User";
-            document.getElementById("welcome-message").innerText = `Welcome, ${user}!`;
+    <header>
+        <h1>Welcome, {{ user.name }}</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('rewards') }}">Rewards</a></li>
+                <li><a href="{{ url_for('assistant') }}">AI Assistant</a></li>
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
 
-            const ctx = document.getElementById('financeChart').getContext('2d');
-            const financeChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Income', 'Expenses', 'Investments', 'Savings'],
-                    datasets: [{
-                        label: 'Financial Overview',
-                        data: [5000, 3000, 1000, 1000],
-                        backgroundColor: ['green', 'red', 'blue', 'purple']
-                    }]
-                }
-            });
-        });
-    </script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <main>
+        <section class="overview">
+            <h2>Financial Overview</h2>
+            <div class="cards">
+                <div class="card">
+                    <h3>💰 Total Balance</h3>
+                    <p>${{ total_balance }}</p>
+                </div>
+                <div class="card">
+                    <h3>📉 Monthly Expenses</h3>
+                    <p>${{ monthly_expenses }}</p>
+                </div>
+                <div class="card">
+                    <h3>📈 Investments</h3>
+                    <p>${{ investments }}</p>
+                </div>
+                <div class="card">
+                    <h3>🎯 Reward Points</h3>
+                    <p>{{ reward_points }}</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="budget-planner">
+            <h2>Budget Planner</h2>
+            <form id="budget-form">
+                <label for="income">Monthly Income:</label>
+                <input type="number" id="income" name="income" required>
+
+                <label for="expenses">Planned Expenses:</label>
+                <input type="number" id="expenses" name="expenses" required>
+
+                <button type="submit">Save Budget</button>
+            </form>
+            <p id="budget-message"></p>
+        </section>
+
+        <section class="bill-tracking">
+            <h2>Bill & Subscription Tracking</h2>
+            <ul>
+                {% for bill in bills %}
+                    <li>{{ bill.name }} - ${{ bill.amount }} (Due: {{ bill.due_date }})</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="investment-advice">
+            <h2>Investment Insights</h2>
+            <p>{{ investment_advice }}</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Fin-Flow. All rights reserved.</p>
+    </footer>
 </body>
 </html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fin-Flow | Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Welcome to Fin-Flow</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('register') }}">Register</a></li>
+                <li><a href="{{ url_for('login') }}">Login</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h2>Your Smart Financial Assistant</h2>
+            <p>Track bills, manage budgets, get investment advice, and more—all in one place.</p>
+            <a href="{{ url_for('register') }}" class="cta-button">Get Started</a>
+        </section>
+
+        <section class="features">
+            <h2>Key Features</h2>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3>💰 Budget Planning</h3>
+                    <p>Plan your expenses with AI-based suggestions.</p>
+                </div>
+                <div class="feature">
+                    <h3>📊 Investment Insights</h3>
+                    <p>Get real-time investment advice powered by AI.</p>
+                </div>
+                <div class="feature">
+                    <h3>🔔 Bill Tracking</h3>
+                    <p>Never miss a bill payment with automated reminders.</p>
+                </div>
+                <div class="feature">
+                    <h3>🎯 Reward System</h3>
+                    <p>Earn points for achieving your financial goals.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Fin-Flow. All rights reserved.</p>
+    </footer>
+</body>
+</html>

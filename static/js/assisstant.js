@@ -1,27 +1,44 @@
-document.addEventListener("DOMContentLoaded", function() {
-    const chatForm = document.getElementById("chatForm");
-    const chatInput = document.getElementById("chatInput");
-    const chatBox = document.getElementById("chatBox");
+document.addEventListener("DOMContentLoaded", function () {
+    const chatBox = document.getElementById("chat-box");
+    const userInput = document.getElementById("user-input");
+    const sendButton = document.getElementById("send-button");
 
-    chatForm.addEventListener("submit", function(event) {
-        event.preventDefault();
-        let userMessage = chatInput.value.trim();
-        if (userMessage === "") return;
+    sendButton.addEventListener("click", sendMessage);
+    userInput.addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+    });
 
-        // Append user message
-        chatBox.innerHTML += `<div class="text-end"><b>You:</b> ${userMessage}</div>`;
-        chatInput.value = "";
+    function sendMessage() {
+        const message = userInput.value.trim();
+        if (message === "") return;
 
-        // Fetch AI Response
-        fetch("/ai-assistant", {
+        appendMessage("You", message, "user-message");
+        userInput.value = "";
+
+        fetch("/assistant/chat", {
             method: "POST",
-            body: JSON.stringify({ message: userMessage }),
-            headers: { "Content-Type": "application/json" }
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message: message }),
         })
         .then(response => response.json())
         .then(data => {
-            chatBox.innerHTML += `<div><b>Assistant:</b> ${data.reply}</div>`;
+            appendMessage("Fin-Flow AI", data.response, "assistant-message");
         })
-        .catch(error => console.error("Error:", error));
-    });
+        .catch(error => {
+            console.error("Error:", error);
+            appendMessage("Fin-Flow AI", "Sorry, something went wrong.", "error-message");
+        });
+    }
+
+    function appendMessage(sender, text, className) {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message", className);
+        messageDiv.innerHTML = `<strong>${sender}:</strong> ${text}`;
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 });

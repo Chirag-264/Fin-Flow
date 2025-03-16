@@ -1,48 +1,51 @@
-<!-- templates/rewards.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Include in <head> of ALL HTML files -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rewards | Fin-Flow</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Fin-Flow | Rewards</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rewards.css') }}">
+    <script defer src="{{ url_for('static', filename='js/rewards.js') }}"></script>
 </head>
-<!-- Include before </body> of ALL HTML files -->
-<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
-<script src="{{ url_for('static', filename='js/rewards.js') }}"></script>
-
 <body>
-    <nav class="navbar navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="#">Fin-Flow Rewards</a>
-        </div>
-    </nav>
+    <header>
+        <h1>Fin-Flow Rewards</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('rewards') }}">Rewards</a></li>
+                <li><a href="{{ url_for('assistant') }}">AI Assistant</a></li>
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
 
-    <div class="container mt-4">
-        <h2 class="text-center">Your Reward Points</h2>
-        <div class="card text-center p-4">
-            <h3 id="rewardPoints">Loading...</h3>
-        </div>
+    <main>
+        <section class="rewards-overview">
+            <h2>Your Reward Points</h2>
+            <p class="points">{{ reward_points }}</p>
+        </section>
 
-        <h4 class="mt-4">Milestones & Rewards</h4>
-        <ul class="list-group">
-            <li class="list-group-item">500 Points - Silver Badge 🎖</li>
-            <li class="list-group-item">1000 Points - Gold Badge 🏆</li>
-            <li class="list-group-item">2000 Points - Exclusive Financial Tips 📈</li>
-            <li class="list-group-item">5000 Points - Premium Membership 🚀</li>
-        </ul>
-    </div>
+        <section class="rewards-list">
+            <h2>Available Rewards</h2>
+            <ul>
+                {% for reward in rewards %}
+                    <li>
+                        <span class="reward-name">{{ reward.name }}</span> 
+                        - <span class="reward-points">{{ reward.points }}</span> Points
+                        {% if reward_points >= reward.points %}
+                            <button class="redeem-button" data-reward-id="{{ reward.id }}">Redeem</button>
+                        {% else %}
+                            <span class="not-enough">Not enough points</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    </main>
 
-    <script>
-        $(document).ready(function() {
-            $.getJSON("/get-rewards", function(data) {
-                $("#rewardPoints").text(data.reward_points + " Points");
-            });
-        });
-    </script>
+    <footer>
+        <p>&copy; 2025 Fin-Flow. All rights reserved.</p>
+    </footer>
 </body>
 </html>

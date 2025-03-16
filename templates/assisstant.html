@@ -1,76 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Include in <head> of ALL HTML files -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Assistant</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .chat-container {
-            max-width: 600px;
-            margin: 50px auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-        }
-        .message {
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-        .user-message {
-            background-color: #007bff;
-            color: white;
-            text-align: right;
-        }
-        .bot-message {
-            background-color: #e9ecef;
-            color: black;
-            text-align: left;
-        }
-    </style>
+    <title>Fin-Flow | AI Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/assistant.css') }}">
+    <script defer src="{{ url_for('static', filename='js/assistant.js') }}"></script>
 </head>
-<!-- Include before </body> of ALL HTML files -->
-<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
-<script src="{{ url_for('static', filename='js/assistant.js') }}"></script>
 <body>
-    <div class="container chat-container">
-        <h3 class="text-center">AI Financial Assistant</h3>
-        <div id="chat-box" class="mb-3" style="max-height: 400px; overflow-y: auto;"></div>
-        <div class="input-group">
-            <input type="text" id="user-input" class="form-control" placeholder="Ask me something...">
-            <button class="btn btn-primary" onclick="sendMessage()">Send</button>
-        </div>
-    </div>
+    <header>
+        <h1>Fin-Flow AI Assistant</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('rewards') }}">Rewards</a></li>
+                <li><a href="{{ url_for('assistant') }}">AI Assistant</a></li>
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
 
-    <script>
-        function sendMessage() {
-            let userInput = document.getElementById("user-input").value;
-            if (!userInput.trim()) return;
+    <main>
+        <section class="chat-container">
+            <h2>Ask Fin-Flow AI</h2>
+            <div id="chat-box">
+                <div class="message bot-message">Hello! How can I assist you with your finances today?</div>
+                {% for message in chat_history %}
+                    <div class="message {{ message.sender }}">{{ message.text }}</div>
+                {% endfor %}
+            </div>
 
-            let chatBox = document.getElementById("chat-box");
-            chatBox.innerHTML += `<div class='message user-message'>${userInput}</div>`;
-            document.getElementById("user-input").value = "";
+            <form id="chat-form" method="POST" action="{{ url_for('assistant') }}">
+                <input type="text" id="user-input" name="user_input" placeholder="Type your question..." required>
+                <button type="submit">Send</button>
+            </form>
+        </section>
+    </main>
 
-            fetch("/ai-response", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: userInput })
-            })
-            .then(response => response.json())
-            .then(data => {
-                chatBox.innerHTML += `<div class='message bot-message'>${data.response}</div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-            })
-            .catch(error => console.error("Error:", error));
-        }
-    </script>
+    <footer>
+        <p>&copy; 2025 Fin-Flow. All rights reserved.</p>
+    </footer>
 </body>
 </html>
