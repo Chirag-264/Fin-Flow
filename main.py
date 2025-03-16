@@ -15,16 +15,16 @@ def create_app():
     """Flask application factory."""
     app = Flask(__name__)
 
-    # Load configuration safely
+    # Load configuration
     try:
         app.config.from_object("settings.app_settings")
     except ImportError:
-        logging.error("Failed to import settings.app_settings! Using default config.")
-        app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///database.db")
-    
-    # Ensure DATABASE URI is set
+        logging.warning("Warning: settings.app_settings not found. Falling back to env variables.")
+
+    # Ensure SQLALCHEMY_DATABASE_URI is set
     if not app.config.get("SQLALCHEMY_DATABASE_URI"):
-        raise RuntimeError("ERROR: 'SQLALCHEMY_DATABASE_URI' is missing in configuration!")
+        app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///database.db")
+        logging.warning("Warning: Using fallback database (SQLite) as SQLALCHEMY_DATABASE_URI is missing.")
 
     # Initialize database
     db.init_app(app)
@@ -58,4 +58,3 @@ def create_app():
     app.register_blueprint(assistant_bp, url_prefix="/assistant")
 
     return app
-
