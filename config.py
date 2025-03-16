@@ -6,10 +6,10 @@ class Config:
     
     # Database Configuration
     DB_CONFIG = {
-        "user": os.getenv("DB_USER", "root"),
-        "password": os.getenv("DB_PASSWORD", "WWzcQRIMSAqDRjhoLxpzSwQYmNYmhkgq"),
-        "host": os.getenv("DB_HOST", "mysql.railway.internal"),
-        "database": os.getenv("DB_NAME", "railway"),
+        "user": os.getenv("MYSQLUSER", "root"),
+        "password": os.getenv("MYSQLPASSWORD", "WWzcQRIMSAqDRjhoLxpzSwQYmNYmhkgq"),
+        "host": os.getenv("MYSQLHOST", "mysql.railway.internal"),
+        "database": os.getenv("MYSQLDATABASE", "railway"),
         "port": os.getenv("MYSQLPORT", 3306)
     }
     
