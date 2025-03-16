@@ -34,7 +34,8 @@ def initialize_database():
                     email VARCHAR(100) NOT NULL UNIQUE,
                     full_name VARCHAR(100),
                     date_of_birth DATE,
-                    registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    reward_points INT DEFAULT 0
                 )
             """)
 
@@ -74,6 +75,18 @@ def initialize_database():
                     reason TEXT NOT NULL,
                     request_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+                    FOREIGN KEY (user_id) REFERENCES user_registration(user_id) ON DELETE CASCADE
+                )
+            """)
+
+                        # Savings Goals Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS saving_goals (
+                    goal_id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT,
+                    goal_name VARCHAR(100) NOT NULL,
+                    target_amount DECIMAL(10, 2) NOT NULL,
+                    current_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
                     FOREIGN KEY (user_id) REFERENCES user_registration(user_id) ON DELETE CASCADE
                 )
             """)
@@ -182,4 +195,75 @@ def get_stock_price(symbol):
         return float(price)
     except KeyError:
         return None
+
+# Insert Savings Goal
+def insert_saving_goal(user_id, goal_name, target_amount):
+    connection = get_connection()
+    try:
+        with connection.cursor() as cursor:
+            sql = """
+                INSERT INTO saving_goals (user_id, goal_name, target_amount)
+                VALUES (%s, %s, %s)
+            """
+            cursor.execute(sql, (user_id, goal_name, target_amount))
+        connection.commit()
+    finally:
+        connection.close()
+
+# Update Savings Progress
+def update_savings(user_id, goal_id, amount_saved):
+    connection = get_connection()
+    try:
+        with connection.cursor() as cursor:
+            sql = """
+                UPDATE saving_goals 
+                SET current_amount = current_amount + %s 
+                WHERE user_id = %s AND goal_id = %s
+            """
+            cursor.execute(sql, (amount_saved, user_id, goal_id))
+            if cursor.rowcount > 0:
+                update_reward_points(user_id, int(amount_saved / 10))  # 1 reward point for every 10 saved
+        connection.commit()
+    finally:
+        connection.close()
+
+# Update Reward Points
+def update_reward_points(user_id, points):
+    connection = get_connection()
+    try:
+        with connection.cursor() as cursor:
+            sql = "UPDATE user_registration SET reward_points = reward_points + %s WHERE user_id = %s"
+            cursor.execute(sql, (points, user_id))
+        connection.commit()
+    finally:
+        connection.close()
+
+# Redeem Reward Points
+def redeem_reward_points(user_id, points):
+    connection = get_connection()
+    try:
+        with connection.cursor() as cursor:
+            sql = "UPDATE user_registration SET reward_points = reward_points - %s WHERE user_id = %s AND reward_points >= %s"
+            cursor.execute(sql, (points, user_id, points))
+            if cursor.rowcount == 0:
+                return False
+        connection.commit()
+        return True
+    finally:
+        connection.close()
+
+# Fetch User Reward Points
+def get_user_rewards(user_id):
+    connection = get_connection()
+    try:
+        with connection.cursor() as cursor:
+            sql = "SELECT reward_points FROM user_registration WHERE user_id = %s"
+            cursor.execute(sql, (user_id,))
+            result = cursor.fetchone()
+            return result['reward_points'] if result else 0
+    finally:
+        connection.close()
+
+
+
 
