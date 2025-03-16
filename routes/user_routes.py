@@ -1,80 +1,84 @@
 from flask import Blueprint, request, jsonify, session
-from database import get_user_by_email, insert_user_registration, update_user_rewards
 from werkzeug.security import generate_password_hash, check_password_hash
+from database.database import get_db_connection
 
-user_routes = Blueprint("user_routes", __name__)
+user_routes = Blueprint('user_routes', __name__)
 
 # User Registration
-@user_routes.route("/register", methods=["POST"])
+@user_routes.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
+    data = request.json
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
 
-    if not all(k in data for k in ("username", "email", "password", "full_name", "date_of_birth")):
-        return jsonify({"error": "Missing required fields"}), 400
+    if not username or not email or not password:
+        return jsonify({'error': 'All fields are required'}), 400
 
-    existing_user = get_user_by_email(data["email"])
-    if existing_user:
-        return jsonify({"error": "Email already registered"}), 409
+    hashed_password = generate_password_hash(password)
 
-    hashed_password = generate_password_hash(data["password"])
-    insert_user_registration(
-        data["username"],
-        hashed_password,
-        data["email"],
-        data["full_name"],
-        data["date_of_birth"],
-    )
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
-    return jsonify({"message": "User registered successfully"}), 201
+    try:
+        cursor.execute("INSERT INTO users (username, email, password, reward_points) VALUES (%s, %s, %s, %s)",
+                       (username, email, hashed_password, 0))
+        conn.commit()
+        return jsonify({'message': 'User registered successfully'}), 201
+    except Exception as e:
+        return jsonify({'error': 'User already exists or invalid data'}), 400
+    finally:
+        cursor.close()
+        conn.close()
 
 # User Login
-@user_routes.route("/login", methods=["POST"])
+@user_routes.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
-    if not all(k in data for k in ("email", "password")):
-        return jsonify({"error": "Missing email or password"}), 400
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
 
-    user = get_user_by_email(data["email"])
-    if not user or not check_password_hash(user["password"], data["password"]):
-        return jsonify({"error": "Invalid credentials"}), 401
+    if not email or not password:
+        return jsonify({'error': 'Email and password are required'}), 400
 
-    session["user_id"] = user["id"]
-    session["username"] = user["username"]
-
-    return jsonify({"message": "Login successful", "user": {"id": user["id"], "username": user["username"]}}), 200
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+    
+    if user and check_password_hash(user['password'], password):
+        session['user_id'] = user['id']
+        session['username'] = user['username']
+        return jsonify({'message': 'Login successful', 'user': {'id': user['id'], 'username': user['username']}}), 200
+    else:
+        return jsonify({'error': 'Invalid credentials'}), 401
 
 # User Logout
-@user_routes.route("/logout", methods=["POST"])
+@user_routes.route('/logout', methods=['POST'])
 def logout():
     session.clear()
-    return jsonify({"message": "Logged out successfully"}), 200
+    return jsonify({'message': 'Logged out successfully'}), 200
 
-# Get User Info (Authenticated)
-@user_routes.route("/user", methods=["GET"])
-def get_user():
-    if "user_id" not in session:
-        return jsonify({"error": "Unauthorized"}), 401
+# Fetch User Profile
+@user_routes.route('/profile', methods=['GET'])
+def get_profile():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
 
-    return jsonify({"user": {"id": session["user_id"], "username": session["username"]}}), 200
+    user_id = session['user_id']
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    cursor.execute("SELECT id, username, email, reward_points FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+    
+    cursor.close()
+    conn.close()
 
-# Reward System API (Fetch User Points)
-@user_routes.route("/rewards", methods=["GET"])
-def get_rewards():
-    if "user_id" not in session:
-        return jsonify({"error": "Unauthorized"}), 401
+    if user:
+        return jsonify({'user': user}), 200
+    else:
+        return jsonify({'error': 'User not found'}), 404
 
-    user = get_user_by_email(session["username"])
-    return jsonify({"rewards": user["reward_points"]}), 200
-
-# Update Rewards
-@user_routes.route("/update_rewards", methods=["POST"])
-def update_rewards():
-    if "user_id" not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    data = request.get_json()
-    if "points" not in data:
-        return jsonify({"error": "Missing points"}), 400
-
-    update_user_rewards(session["user_id"], data["points"])
-    return jsonify({"message": "Rewards updated"}), 200

@@ -1,46 +1,50 @@
 from flask import Blueprint, request, jsonify
-from database.database import insert_transaction_details, insert_investment_details, transfer_emergency_fund
+from ml.ml_model import predict_future_expenses, recommend_investments, ai_assistant_response
+from database import get_db_connection
 
-finance_bp = Blueprint("finance", __name__)
+finance_routes = Blueprint("finance_routes", __name__)
 
-@finance_bp.route("/track-transaction", methods=["POST"])
-def track_transaction():
-    """API to track user transactions (bills, investments, budgeting)."""
+# Route: Predict Future Expenses
+@finance_routes.route("/predict_expenses", methods=["GET"])
+def predict_expenses():
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify({"error": "User ID is required"}), 400
+
+    prediction = predict_future_expenses(user_id)
+    return jsonify({"future_expenses": prediction})
+
+# Route: Investment Recommendations
+@finance_routes.route("/investment_recommendation", methods=["GET"])
+def investment_recommendation():
+    recommendations = recommend_investments()
+    return jsonify({"investment_recommendations": recommendations})
+
+# Route: AI Financial Assistant Response
+@finance_routes.route("/ai_assistant", methods=["POST"])
+def ai_assistant():
     data = request.get_json()
-    if not all(k in data for k in ("user_id", "amount", "transaction_type")):
-        return jsonify({"error": "Missing required fields"}), 400
+    user_input = data.get("user_input")
 
-    insert_transaction_details(data["user_id"], data["amount"], data["transaction_type"])
-    return jsonify({"message": "Transaction recorded successfully"}), 201
+    if not user_input:
+        return jsonify({"error": "User input is required"}), 400
 
-@finance_bp.route("/track-investment", methods=["POST"])
-def track_investment():
-    """API to track user investments with real-time status."""
-    data = request.get_json()
-    if not all(k in data for k in ("user_id", "stock_name", "amount_of_stocks", "amount_of_money", "status")):
-        return jsonify({"error": "Missing required fields"}), 400
+    response = ai_assistant_response(user_input)
+    return jsonify({"assistant_response": response})
 
-    insert_investment_details(
-        data["user_id"],
-        data["stock_name"],
-        data["amount_of_stocks"],
-        data["amount_of_money"],
-        data["status"],
-    )
-    return jsonify({"message": "Investment recorded successfully"}), 201
+# Route: Fetch User Financial Data
+@finance_routes.route("/user_financials/<int:user_id>", methods=["GET"])
+def user_financials(user_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
-@finance_bp.route("/emergency-transfer", methods=["POST"])
-def emergency_transfer():
-    """
-    Transfers money from emergency fund to the main bank account
-    """
-    data = request.get_json()
-    user_id = data.get("user_id")
-    amount = data.get("amount")
+    cursor.execute("SELECT balance, total_expenses, total_income FROM users WHERE id = %s", (user_id,))
+    user_data = cursor.fetchone()
 
-    success, message = transfer_emergency_fund(user_id, amount)
-    
-    if success:
-        return jsonify({"message": "Emergency fund transferred successfully"}), 200
-    else:
-        return jsonify({"error": message}), 400
+    cursor.close()
+    conn.close()
+
+    if not user_data:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify(user_data)

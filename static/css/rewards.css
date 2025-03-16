@@ -1,0 +1,77 @@
+/* Rewards Page Layout */
+.rewards-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+/* Header */
+.rewards-header {
+    width: 100%;
+    background-color: #28a745;
+    color: white;
+    text-align: center;
+    padding: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    border-radius: 10px;
+}
+
+/* Rewards Points Display */
+.rewards-points {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 20px;
+    color: #28a745;
+    border: 2px solid #28a745;
+}
+
+/* Rewards List */
+.rewards-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Individual Reward Item */
+.reward-item {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    text-align: center;
+    transition: 0.3s ease-in-out;
+}
+.reward-item:hover {
+    transform: scale(1.05);
+}
+
+/* Reward Item Title */
+.reward-item h3 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* Redeem Button */
+.redeem-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.3s;
+}
+.redeem-btn:hover {
+    background-color: #218838;
+}

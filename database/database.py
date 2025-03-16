@@ -1,177 +1,127 @@
-import pymysql
+import mysql.connector
+import os
 import requests
+from config import DB_CONFIG, ALPHA_VANTAGE_API_KEY
 
-# Database connection
-connection = pymysql.connect(
-    host='localhost',
-    user='your_username',
-    password='your_password'
-)
+# Establish Database Connection
+def get_db_connection():
+    return mysql.connector.connect(**DB_CONFIG)
 
-try:
-    with connection.cursor() as cursor:
-        # Create database if it doesn't exist
-        cursor.execute("CREATE DATABASE IF NOT EXISTS finance")
-        cursor.execute("USE finance")
-        
-        # Create user registration details table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS user_registration (
-                user_id INT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(50) NOT NULL,
-                password VARCHAR(100) NOT NULL,
-                email VARCHAR(100) NOT NULL,
-                full_name VARCHAR(100),
-                date_of_birth DATE,
-                registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                reward_points INT DEFAULT 0
-            )
-        """)
-        
-        # Create transaction details table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS transaction_details (
-                transaction_id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT,
-                transaction_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                amount DECIMAL(10, 2) NOT NULL,
-                transaction_type VARCHAR(50) NOT NULL,
-                FOREIGN KEY (user_id) REFERENCES user_registration(user_id)
-            )
-        """)
-        
-        # Create investment details table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS investment_details (
-                investment_id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT,
-                stock_name VARCHAR(100) NOT NULL,
-                amount_of_stocks INT NOT NULL,
-                amount_of_money DECIMAL(10, 2) NOT NULL,
-                status VARCHAR(50) NOT NULL,
-                buying_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES user_registration(user_id)
-            )
-        """)
-        
-        # Create stock prices table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS stock_prices (
-                stock_id INT AUTO_INCREMENT PRIMARY KEY,
-                stock_symbol VARCHAR(10) NOT NULL,
-                price DECIMAL(10, 2) NOT NULL,
-                recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-    connection.commit()
-finally:
-    connection.close()
+# Initialize Database and Tables
+def initialize_db():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # User Registration Table with reward points
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            email VARCHAR(100) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            full_name VARCHAR(100),
+            date_of_birth DATE,
+            reward_points INT DEFAULT 0
+        )
+    """)
+    
+    # Transactions Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS transactions (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT,
+            amount DECIMAL(10,2) NOT NULL,
+            transaction_type ENUM('bill', 'investment', 'budget') NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    """)
 
-# Alpha Vantage API Key
-ALPHA_VANTAGE_API_KEY = "your_alpha_vantage_api_key"
+    # Investment Tracking Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS investments (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT,
+            stock_name VARCHAR(100),
+            amount_of_stocks INT,
+            amount_of_money DECIMAL(10,2),
+            status ENUM('active', 'closed'),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    """)
 
-# Function to fetch real-time stock prices
-def fetch_stock_price(stock_symbol):
-    url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={stock_symbol}&apikey={ALPHA_VANTAGE_API_KEY}"
-    response = requests.get(url).json()
-    try:
-        price = float(response['Global Quote']['05. price'])
-        return price
-    except KeyError:
-        return None
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-# Function to store stock prices in database
-def store_stock_price(stock_symbol, price):
-    connection = pymysql.connect(
-        host='localhost',
-        user='your_username',
-        password='your_password',
-        database='finance'
-    )
-    try:
-        with connection.cursor() as cursor:
-            sql = """
-                INSERT INTO stock_prices (stock_symbol, price)
-                VALUES (%s, %s)
-            """
-            cursor.execute(sql, (stock_symbol, price))
-        connection.commit()
-    finally:
-        connection.close()
+# Register a new user
+def insert_user_registration(username, password_hash, email, full_name, date_of_birth):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO users (username, password_hash, email, full_name, date_of_birth) 
+        VALUES (%s, %s, %s, %s, %s)
+    """, (username, password_hash, email, full_name, date_of_birth))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-# Function to insert user registration details
-def insert_user_registration(username, password, email, full_name, date_of_birth):
-    connection = pymysql.connect(
-        host='localhost',
-        user='your_username',
-        password='your_password',
-        database='finance'
-    )
-    try:
-        with connection.cursor() as cursor:
-            sql = """
-                INSERT INTO user_registration (username, password, email, full_name, date_of_birth)
-                VALUES (%s, %s, %s, %s, %s)
-            """
-            cursor.execute(sql, (username, password, email, full_name, date_of_birth))
-        connection.commit()
-    finally:
-        connection.close()
-
-# Function to insert transaction details
+# Track a transaction
 def insert_transaction_details(user_id, amount, transaction_type):
-    connection = pymysql.connect(
-        host='localhost',
-        user='your_username',
-        password='your_password',
-        database='finance'
-    )
-    try:
-        with connection.cursor() as cursor:
-            sql = """
-                INSERT INTO transaction_details (user_id, amount, transaction_type)
-                VALUES (%s, %s, %s)
-            """
-            cursor.execute(sql, (user_id, amount, transaction_type))
-        connection.commit()
-    finally:
-        connection.close()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO transactions (user_id, amount, transaction_type) 
+        VALUES (%s, %s, %s)
+    """, (user_id, amount, transaction_type))
+    
+    # Reward System: Increase points based on transaction type
+    reward_points = 10 if transaction_type == "investment" else 5
+    cursor.execute("""
+        UPDATE users SET reward_points = reward_points + %s WHERE id = %s
+    """, (reward_points, user_id))
 
-# Function to insert investment details
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+# Track an investment
 def insert_investment_details(user_id, stock_name, amount_of_stocks, amount_of_money, status):
-    connection = pymysql.connect(
-        host='localhost',
-        user='your_username',
-        password='your_password',
-        database='finance'
-    )
-    try:
-        with connection.cursor() as cursor:
-            sql = """
-                INSERT INTO investment_details (user_id, stock_name, amount_of_stocks, amount_of_money, status)
-                VALUES (%s, %s, %s, %s, %s)
-            """
-            cursor.execute(sql, (user_id, stock_name, amount_of_stocks, amount_of_money, status))
-        connection.commit()
-    finally:
-        connection.close()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO investments (user_id, stock_name, amount_of_stocks, amount_of_money, status) 
+        VALUES (%s, %s, %s, %s, %s)
+    """, (user_id, stock_name, amount_of_stocks, amount_of_money, status))
 
-# Function to update reward points
-def update_reward_points(user_id, points):
-    connection = pymysql.connect(
-        host='localhost',
-        user='your_username',
-        password='your_password',
-        database='finance'
-    )
-    try:
-        with connection.cursor() as cursor:
-            sql = """
-                UPDATE user_registration
-                SET reward_points = reward_points + %s
-                WHERE user_id = %s
-            """
-            cursor.execute(sql, (points, user_id))
-        connection.commit()
-    finally:
-        connection.close()
+    # Reward System: Investments give more points
+    cursor.execute("""
+        UPDATE users SET reward_points = reward_points + 20 WHERE id = %s
+    """, (user_id,))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+# Fetch Stock Market Data from Alpha Vantage API
+def get_stock_data(symbol):
+    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={ALPHA_VANTAGE_API_KEY}"
+    response = requests.get(url)
+    data = response.json()
+    
+    if "Time Series (5min)" in data:
+        return data["Time Series (5min)"]
+    else:
+        return {"error": "Invalid API response"}
+
+# Retrieve reward points for a user
+def get_reward_points(user_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT reward_points FROM users WHERE id = %s", (user_id,))
+    points = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return points[0] if points else 0
