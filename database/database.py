@@ -1,7 +1,11 @@
 import mysql.connector
 import os
 import requests
-from config import DB_CONFIG, ALPHA_VANTAGE_API_KEY
+import config
+
+DB_CONFIG = config.DB_CONFIG
+ALPHA_VANTAGE_API_KEY = config.ALPHA_VANTAGE_API_KEY
+
 
 # Establish Database Connection
 def get_db_connection():
