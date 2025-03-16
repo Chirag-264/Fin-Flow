@@ -1,10 +1,10 @@
 import mysql.connector
 import os
 import requests
-import config
+import settings
 
-DB_CONFIG = config.DB_CONFIG
-ALPHA_VANTAGE_API_KEY = config.ALPHA_VANTAGE_API_KEY
+DB_CONFIG = settings.DB_CONFIG
+ALPHA_VANTAGE_API_KEY = settings.ALPHA_VANTAGE_API_KEY
 
 
 # Establish Database Connection

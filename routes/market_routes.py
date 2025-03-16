@@ -1,7 +1,7 @@
 import requests
 from flask import Blueprint, request, jsonify
 from database import get_db_connection
-from config import ALPHA_VANTAGE_API_KEY
+from settings import ALPHA_VANTAGE_API_KEY
 from ml.ml_model import analyze_market_trends
 
 market_routes = Blueprint("market_routes", __name__)
