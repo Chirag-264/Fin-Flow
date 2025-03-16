@@ -2,14 +2,15 @@ import os
 
 class Config:
     """Base configuration with default settings."""
-    SECRET_KEY = os.getenv("SECRET_KEY", "your_secret_key_here")  # Change for production
+    SECRET_KEY = os.getenv("SECRET_KEY", "e5b7a9d9f34c6f1a3d2b5c9f8a7e6d1c4b3a2f9e8d7c6b5a1e2d3f4c5b6a7d8e")  # Change for production
     
     # Database Configuration
     DB_CONFIG = {
-        "user": os.getenv("DB_USER", "your_user"),
-        "password": os.getenv("DB_PASSWORD", "your_password"),
-        "host": os.getenv("DB_HOST", "localhost"),
-        "database": os.getenv("DB_NAME", "finflow_db")
+        "user": os.getenv("DB_USER", "root"),
+        "password": os.getenv("DB_PASSWORD", "WWzcQRIMSAqDRjhoLxpzSwQYmNYmhkgq"),
+        "host": os.getenv("DB_HOST", "mysql.railway.internal"),
+        "database": os.getenv("DB_NAME", "railway"),
+        "port": os.getenv("MYSQLPORT", 3306)
     }
     
     SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}/{DB_CONFIG['database']}"
@@ -17,7 +18,7 @@ class Config:
     DEBUG = False
 
     # Alpha Vantage API Key
-    ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY", "your_api_key_here")
+    ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY", "PJI5WL8BSVCMSK6G")
 
 class DevelopmentConfig(Config):
     """Development-specific configuration."""

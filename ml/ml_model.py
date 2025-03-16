@@ -1,88 +1,59 @@
+import os
+import requests
 import numpy as np
 import pandas as pd
-import mysql.connector
 from sklearn.linear_model import LinearRegression
-from sklearn.cluster import KMeans
-from config import DB_CONFIG
+from io import StringIO
 
-# Establish Database Connection
-def get_db_connection():
-    return mysql.connector.connect(**DB_CONFIG)
+# Get API key from environment variable
+API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
 
-# Fetch user transactions for predictions
-def fetch_user_transactions(user_id):
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+# Function to fetch stock data
+def fetch_stock_data(symbol):
+    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={API_KEY}&datatype=csv"
+    response = requests.get(url)
     
-    cursor.execute("SELECT amount, created_at FROM transactions WHERE user_id = %s", (user_id,))
-    transactions = cursor.fetchall()
-    
-    cursor.close()
-    conn.close()
-    
-    return transactions
+    if response.status_code == 200:
+        df = pd.read_csv(StringIO(response.text))
+        df = df.rename(columns={"timestamp": "date", "close": "price"})
+        df = df[["date", "price"]].iloc[::-1]  # Reverse to chronological order
+        return df
+    else:
+        return None
 
-# Predict Future Expenses using Linear Regression
-def predict_future_expenses(user_id, months=3):
-    transactions = fetch_user_transactions(user_id)
-    
-    if not transactions or len(transactions) < 3:
-        return "Not enough data for prediction"
+# Function to train a simple linear regression model
+def train_model(data):
+    if data is None or len(data) < 10:
+        return None
 
-    df = pd.DataFrame(transactions)
-    df['created_at'] = pd.to_datetime(df['created_at'])
-    df['days_since'] = (df['created_at'] - df['created_at'].min()).dt.days
-    df['amount'] = df['amount'].astype(float)
+    data["date"] = pd.to_datetime(data["date"])
+    data["days"] = (data["date"] - data["date"].min()).dt.days
 
-    X = df[['days_since']].values
-    y = df['amount'].values
+    X = np.array(data["days"]).reshape(-1, 1)
+    y = np.array(data["price"])
 
     model = LinearRegression()
     model.fit(X, y)
-    
-    future_days = np.array([(df['days_since'].max() + i * 30) for i in range(1, months + 1)]).reshape(-1, 1)
-    predictions = model.predict(future_days)
 
-    return {f"Month {i+1}": round(pred, 2) for i, pred in enumerate(predictions)}
+    return model
 
-# Fetch investment options
-def fetch_investment_data():
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+# Function to predict stock prices
+def predict_stock_price(symbol, days_ahead):
+    data = fetch_stock_data(symbol)
+    model = train_model(data)
 
-    cursor.execute("SELECT stock_name, amount_of_money FROM investments")
-    investments = cursor.fetchall()
+    if model is None:
+        return {"error": "Not enough data to make a prediction"}
 
-    cursor.close()
-    conn.close()
+    last_day = (data["date"].max() - data["date"].min()).days
+    future_days = np.array([[last_day + days_ahead]])
 
-    return investments
+    predicted_price = model.predict(future_days)[0]
+    return {"symbol": symbol, "predicted_price": round(predicted_price, 2)}
 
-# Recommend investments using KMeans Clustering
-def recommend_investments():
-    investments = fetch_investment_data()
-    
-    if len(investments) < 3:
-        return "Not enough data to generate recommendations"
-
-    df = pd.DataFrame(investments)
-    df['amount_of_money'] = df['amount_of_money'].astype(float)
-
-    kmeans = KMeans(n_clusters=2, random_state=42, n_init=10)
-    df['Cluster'] = kmeans.fit_predict(df[['amount_of_money']])
-
-    recommended = df[df['Cluster'] == df['Cluster'].mode()[0]]['stock_name'].tolist()
-    return {"Recommended Stocks": recommended}
-
-# AI Assistant Response Logic
-def ai_assistant_response(user_input):
-    user_input = user_input.lower()
-
-    if "expense prediction" in user_input:
-        return "I can predict your future expenses. Please provide your User ID."
-    elif "investment recommendation" in user_input:
-        return "I can recommend investments based on your transaction history."
-    elif "reward points" in user_input:
-        return "You can check your reward points in the dashboard."
-    else:
-        return "I'm still learning! Please ask about expenses, investments, or rewards."
+# Example usage
+if __name__ == "__main__":
+    symbol = "AAPL"  # Example stock symbol
+    days_ahead = 5   # Predict 5 days into the future
+    prediction = predict_stock_price(symbol, days_ahead)
+    print(prediction)
