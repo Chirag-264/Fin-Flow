@@ -13,7 +13,7 @@ class Config:
         "port": os.getenv("MYSQLPORT", 3306)
     }
     
-    SQLALCHEMY_DATABASE_URI = os.getenv("MYSQL_URL")
+    SQLALCHEMY_DATABASE_URI = os.getenv("MYSQL_URL", "mysql://root:WWzcQRIMSAqDRjhoLxpzSwQYmNYmhkgq@mysql.railway.internal:3306/railway")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     DEBUG = False
 
