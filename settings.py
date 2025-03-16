@@ -35,3 +35,8 @@ if config_mode == "production":
     app_config = ProductionConfig()
 else:
     app_config = DevelopmentConfig()
+
+app_settings = {
+    "DEBUG": True,
+    "SECRET_KEY": "e5b7a9d9f34c6f1a3d2b5c9f8a7e6d1c4b3a2f9e8d7c6b5a1e2d3f4c5b6a7d8e"
+}
